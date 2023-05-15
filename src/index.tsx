@@ -1,17 +1,29 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import './index.css';
-import App from './App';
-import reportWebVitals from './reportWebVitals';
+import React from "react";
+import ReactDOM from "react-dom/client";
+import "./index.css";
+import App from "./App";
+import reportWebVitals from "./reportWebVitals";
+import { IDBPDatabase, openDB } from "idb";
 
-const root = ReactDOM.createRoot(
-  document.getElementById('root') as HTMLElement
-);
-root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+async function getDb(name: string): Promise<IDBPDatabase> {
+  return await openDB(name, 1, {
+    upgrade(db) {
+      db.createObjectStore("commit-store", { keyPath: "id" });
+      db.createObjectStore("snapshot-store", { keyPath: "id" });
+    },
+  });
+}
+
+getDb("test").then((db) => {
+  const root = ReactDOM.createRoot(
+    document.getElementById("root") as HTMLElement
+  );
+  root.render(
+    <React.StrictMode>
+      <App db={db} />
+    </React.StrictMode>
+  );
+});
 
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))
