@@ -14,13 +14,13 @@ async function getDb(name: string): Promise<IDBPDatabase> {
   });
 }
 
-getDb("test").then((db) => {
+Promise.all([getDb("live-collab"), getDb("sprig")]).then(([lc, sprig]) => {
   const root = ReactDOM.createRoot(
     document.getElementById("root") as HTMLElement
   );
   root.render(
     <React.StrictMode>
-      <App db={db} />
+      <App dbs={{lc, sprig}} />
     </React.StrictMode>
   );
 });

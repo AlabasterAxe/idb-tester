@@ -18,7 +18,16 @@ function createLargeObject() {
   return res;
 }
 
+function createMediumObject() {
+  const res: Record<string, string> = {};
+  for (let i = 0; i < 1_000; i++) {
+    res[createRandomString()] = createRandomString();
+  }
+  return res;
+}
+
 const largeObject = createLargeObject();
+const mediumObject = createMediumObject();
 
 function DbTask({ db, task, periodMs, name }: {db: IDBPDatabase, task: (db: IDBPDatabase, runIdx: number) => Promise<number>, periodMs: number, name: string}) {
   const [numRuns, setNumRuns] = useState(0);
@@ -65,10 +74,10 @@ function DbTask({ db, task, periodMs, name }: {db: IDBPDatabase, task: (db: IDBP
 }
 
 
-function App({db}: {db: IDBPDatabase}) {
+function App({dbs: {lc, sprig}}: {dbs: Record<string, IDBPDatabase>}) {
   return (
     <div className="App">
-      <DbTask db={db} name="Commit Write" task={async (db, runIdx) => {
+      <DbTask db={lc} name="Commit Write" task={async (db, runIdx) => {
         const tx = db.transaction("commit-store", "readwrite");
         const store = tx.objectStore("commit-store");
         const start = performance.now();
@@ -81,7 +90,7 @@ function App({db}: {db: IDBPDatabase}) {
         await tx.done;
         return end - start;
       }} periodMs={100}></DbTask>
-      <DbTask db={db} name="Commit Scan" task={async (db, runIdx) => {
+      <DbTask db={lc} name="Commit Scan" task={async (db, runIdx) => {
         const tx = db.transaction("commit-store", "readonly");
         const store = tx.objectStore("commit-store");
         const start = performance.now();
@@ -95,7 +104,7 @@ function App({db}: {db: IDBPDatabase}) {
         await tx.done;
         return end - start;
       }} periodMs={500}></DbTask>
-      <DbTask db={db} name="Snapshot Write" task={async (db, runIdx) => {
+      <DbTask db={lc} name="Snapshot Write" task={async (db, runIdx) => {
         const tx = db.transaction("snapshot-store", "readwrite");
         const store = tx.objectStore("snapshot-store");
         const start = performance.now();
@@ -106,6 +115,17 @@ function App({db}: {db: IDBPDatabase}) {
         await tx.done;
         return end - start;
       }} periodMs={30_000}></DbTask>
+      <DbTask db={sprig} name="Other Work" task={async (db, runIdx) => {
+        const tx = db.transaction("snapshot-store", "readwrite");
+        const store = tx.objectStore("snapshot-store");
+        const start = performance.now();
+        // not sure if this is legit but this is used to measure how long the task is blocked
+        await store.get(1);
+        const end = performance.now();
+        await store.put({id: runIdx, value: mediumObject});
+        await tx.done;
+        return end - start;
+      }} periodMs={10_000}></DbTask>
     </div>
   );
 }
