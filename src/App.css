@@ -1,5 +1,8 @@
 .App {
   text-align: center;
+  display: flex;
+  height: 100vh;
+  width: 100vw;
 }
 
 .App-logo {
@@ -35,4 +38,15 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+.task-column {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.interaction-tester {
+  overflow-y: scroll;
+  max-width: 100px;
 }
